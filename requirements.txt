@@ -1,0 +1,9 @@
+easydict==1.9
+h5py==3.5.0
+matplotlib==3.4.3
+nibabel==3.2.1
+numpy==1.21.3
+open3d==0.10.0.0
+scipy==1.7.1
+torch==1.8.1+cu111
+tqdm==4.62.3

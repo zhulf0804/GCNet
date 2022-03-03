@@ -1,0 +1,64 @@
+log:
+  exp_dir: train_logs/mvp_rg
+  log_freq: 8
+
+model:
+  num_layers: 3
+  in_points_dim: 3
+  first_feats_dim: 512
+  final_feats_dim: 96
+  first_subsampling_dl: 0.04
+  in_feats_dim: 1
+  conv_radius: 2.75
+  deform_radius: 5.0
+  num_kernel_points: 15
+  KP_extent: 2.0
+  KP_influence: linear
+  aggregation_mode: sum
+  fixed_kernel_points: center
+  use_batch_norm: True
+  batch_norm_momentum: 0.02
+
+overlap_attention_module:
+  gnn_feats_dim: 256
+  dgcnn_k: 10
+  num_head: 4
+  ppf_k: 64
+  radius_mul: 16
+  bottleneck: False
+  nets: ['gge','cross_attn','gge']
+
+loss:
+  pos_margin: 0.1
+  neg_margin: 1.4
+  log_scale: 64
+  pos_radius: 0.018
+  safe_radius: 0.06
+  overlap_radius: 0.04
+  matchability_radius: 0.04
+  w_circle_loss: 1.0
+  w_overlap_loss: 1.0
+  w_saliency_loss: 0.0
+  max_points: 768
+
+optimiser:
+  optimizer: SGD
+  max_epoch: 200
+  lr: 0.01
+  weight_decay: 0.000001
+  momentum: 0.98
+  scheduler: ExpLR
+  scheduler_gamma: 0.95
+  scheduler_freq: 1
+  iter_size: 4
+
+dataset:
+  dataset: mvp_rg
+  benchmark: mvp_rg
+  root: Datasets/mvp_rg
+  batch_size: 1
+  num_workers: 6
+  augment_noise: 0.005
+  rot_mag: 360.0
+  trans_mag: 0.5
+  dataset_type: mvp_rg

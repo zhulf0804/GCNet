@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.idea/
+test*.py
+checkpoints/
+model/.DS_Store
+.DS_Store
+tmp.py
+work_dirs*
+cpp_wrappers/cpp_neighbors/build/
+*.so
+train_logs/
+results/
+Datasets/
