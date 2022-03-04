@@ -22,7 +22,7 @@
     sh compile_wrappers.sh
     ```
 
-## 0. Pretrained weights (Optimal)
+## 0. Pretrained weights (Optional)
 
 Download pretrained weights for 3DMatch, 3DLoMatch, Odometry KITTI and MVP-RG from [GoogleDrive](https://drive.google.com/drive/folders/1JDn6zQfLdZfAVVboXRrrrCVRo48pRjyW?usp=sharing) or [BaiduDisk](https://pan.baidu.com/s/18G_Deim1UlSkY8wWoOiwnw) (pwd: `vr9g`).
 
