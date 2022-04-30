@@ -30,7 +30,7 @@ Download pretrained weights for 3DMatch, 3DLoMatch, Odometry KITTI and MVP-RG fr
 
 ### dataset
 
-We adopt the 3DMatch and 3DLoMatch provided from [PREDATOR](https://github.com/overlappredator/OverlapPredator), and download it [here](https://share.phys.ethz.ch/~gsg/pairwise_reg/3dmatch.zip) [**5.17G**].
+We adopt the 3DMatch and 3DLoMatch provided from [PREDATOR](https://github.com/overlappredator/OverlapPredator), and download it [here](https://share.phys.ethz.ch/~gsg/Predator/data.zip) [**936.1MB**].
 Unzip it, then we should get the following directories structure:
 
 ``` 
