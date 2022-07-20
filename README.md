@@ -1,13 +1,32 @@
-# NgeNet: Neighborhood-aware Geometric Encoding Network for Point Cloud Registration
+# [NgeNet: Neighborhood-aware Geometric Encoding Network for Point Cloud Registration](https://arxiv.org/pdf/2201.12094.pdf)
 
-### [Neighborhood-aware Geometric Encoding Network for Point Cloud Registration](https://arxiv.org/pdf/2201.12094.pdf)
+## Results (saved in reg_results/3DMatch*-pred)
 
-[Lifa Zhu](https://github.com/zhulf0804), [Haining Guan](https://github.com/qsisi), Changwei Lin, [Renmin Han*](https://scholar.google.com/citations?user=5PEiWnkAAAAJ&hl=zh-CN&oi=ao)
+- Recall on 3DMatch and 3DLoMatch (correspondences RMSE below 0.2)
 
-## Updates
+    | Dataset | npairs | Scene Recall (%) | Pair Recall (%) |
+    | :---: | :---: | :---: | :---: |
+    | 3DMatch | 1279 | 92.9 | 93.9 |
+    | 3DLoMatch | 1726 | 71.9 | 74.5 | 
 
-- **2022-03-04** The code is publicly avaliable here.
-- **2022-01-31** The paper is avaliable at [arXiv](https://arxiv.org/abs/2201.12094).
+- Recall on 3DMatch and 3DLoMatch (under 0.3m && 15 degrees)
+
+    | Dataset | npairs | Pair Recall (%) |
+    | :---: | :---: | :---: |
+    | 3DMatch | 1623 | 95.0 |
+    | 3DLoMatch | 1781 | 75.1 | 
+
+- Results on Odometry KITTI
+
+    | Dataset | RTE(cm) | RRE(°) | Recall (%) |
+    | :---: | :---: | :---: | :---: |
+    | Odometry KITTI | 6.1 | 0.26 | 99.8 |
+
+- Results on MVP-RG
+
+    | Dataset | RRE(°) | RTE | RMSE |
+    | :---: | :---: | :---: | :---: |
+    | MVP-RG | 7.99 | 0.048 | 0.093 |
 
 ## Environments
 
@@ -22,13 +41,13 @@
     sh compile_wrappers.sh
     ```
 
-## 0. Pretrained weights (Optional)
+## [Pretrained weights (Optional)]
 
 Download pretrained weights for 3DMatch, 3DLoMatch, Odometry KITTI and MVP-RG from [GoogleDrive](https://drive.google.com/drive/folders/1JDn6zQfLdZfAVVboXRrrrCVRo48pRjyW?usp=sharing) or [BaiduDisk](https://pan.baidu.com/s/18G_Deim1UlSkY8wWoOiwnw) (pwd: `vr9g`).
 
-## 1. 3DMatch and 3DLoMatch
+## [3DMatch and 3DLoMatch]
 
-### dataset
+### 1.1 dataset
 
 We adopt the 3DMatch and 3DLoMatch provided from [PREDATOR](https://github.com/overlappredator/OverlapPredator), and download it [here](https://share.phys.ethz.ch/~gsg/Predator/data.zip) [**936.1MB**].
 Unzip it, then we should get the following directories structure:
@@ -47,7 +66,7 @@ Unzip it, then we should get the following directories structure:
         | -- sun3d-mit_lab_hj-lab_hj_tea_nov_2_2012_scan1_erika
 ```
 
-### train
+### 1.2 train
 
 ```
 ## Reconfigure configs/threedmatch.yaml by updating the following values based on your dataset.
@@ -62,7 +81,7 @@ python train.py configs/threedmatch.yaml
 # You can remove it or change its postion according to your GPU memory. 
 ```
 
-### evaluate and visualize
+### 1.3 evaluate and visualize
 
 ```
 cd NgeNet
@@ -72,9 +91,9 @@ python eval_3dmatch.py --benchmark 3DMatch --data_root your_path/indoor --checkp
 python eval_3dmatch.py --benchmark 3DLoMatch --data_root your_path/indoor --checkpoint your_path/3dmatch.pth --saved_path work_dirs/3dlomatch [--vis] [--no_cuda]
 ```
 
-## 2. Odometry KITTI
+## [Odometry KITTI]
 
-### dataset
+### 2.1 dataset
 
 Download odometry kitti [here](http://www.cvlibs.net/datasets/kitti/eval_odometry.php) with `[velodyne laser data, 80 GB]` and `[ground truth poses (4 MB)]`, then unzip and organize in the following format.
 
@@ -89,7 +108,7 @@ Download odometry kitti [here](http://www.cvlibs.net/datasets/kitti/eval_odometr
         | -- 9_992_1004.npy
 ```
 
-### train
+### 2.2 train
 
 ```
 ## Reconfigure configs/kitti.yaml by updating the following values based on your dataset.
@@ -101,16 +120,16 @@ cd NgeNet
 python train.py configs/kitti.yaml
 ```
 
-### evaluate and visualize
+### 2.3 evaluate and visualize
 
 ```
 cd NgeNet
 python eval_kitti.py --data_root your_path/kitti --checkpoint your_path/kitti.pth [--vis] [--no_cuda]
 ```
 
-## 3. MVP-RG
+## [MVP-RG]
 
-### dataset
+### 3.1 dataset
 
 Download MVP-RG dataset [here](https://mvp-dataset.github.io/MVP/Registration.html), then organize in the following format.
 
@@ -120,7 +139,7 @@ Download MVP-RG dataset [here](https://mvp-dataset.github.io/MVP/Registration.ht
     | -- MVP_Test_RG.h5
 ```
 
-### train
+### 3.2 train
 
 ```
 ## Reconfigure configs/mvp_rg.yaml by updating the following values based on your dataset.
@@ -134,11 +153,15 @@ python train.py configs/mvp_rg.yaml
 # You can remove it or change its postion according to your GPU memory. 
 ```
 
-### evaluate and visualize
+### 3.3 evaluate and visualize
 
 ```
 python eval_mvp_rg.py --data_root your_path/mvp_rg --checkpoint your_path/mvp_rg.pth [--vis] [--no_cuda]
 ```
+
+## [Demo]
+
+TBD
 
 ## Citation
 

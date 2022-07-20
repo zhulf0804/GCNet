@@ -14,7 +14,7 @@ from models import architectures, NgeNet, vote
 from utils import decode_config, npy2pcd, pcd2npy, execute_global_registration, \
                   npy2feat, vis_plys, setup_seed, fmat, to_tensor, get_blue, \
                   get_yellow
-from metrics import inlier_ratio_core, registration_recall_core, Metric
+from metrics import inlier_ratio_core, Metric
 from rich.console import Console
 from rich.table import Table
 
@@ -43,7 +43,12 @@ def get_scene_split(file_path):
         c += stride
     return splits, np.array(ply_coors_ids, dtype=np.int64), test_cats
 
-def print_table(scenes, scene_recall, rre, rte):
+
+def print_table(scenes, scene_recall, error_r, error_t):
+    error_r_mean = np.array([np.mean(item) for item in error_r])
+    error_r_median = np.array([np.median(item) for item in error_r])
+    error_t_mean = np.array([np.mean(item) for item in error_t])
+    error_t_median = np.array([np.median(item) for item in error_t])
 
     console = Console()
     table = Table(show_header=True, header_style="bold")
@@ -52,17 +57,17 @@ def print_table(scenes, scene_recall, rre, rte):
     for col in columns:
         table.add_column(col)
 
-    values = np.concatenate([scene_recall[:,None], rre[:, 1:], rte[:, 1:]], axis=1)
+    values = np.concatenate([scene_recall[:,None], error_r_median[:, None], error_t_median[:, None]], axis=1)
 
     for sid, vals in zip(scenes, values):
         table.add_row(sid, *[f'{v:.3f}' for v in vals])
 
     scene_recall_mean = np.mean(scene_recall)
     scene_recall_std = np.std(scene_recall)
-    rre_mean = np.mean(rre[:, :1])
-    rre_std = np.std(rre[:, 1])
-    rte_mean = np.mean(rte[:, :1])
-    rte_std = np.std(rte[:, 1])
+    rre_mean = np.mean(error_r_mean)
+    rre_std = np.std(error_r_median)
+    rte_mean = np.mean(error_t_mean)
+    rte_std = np.std(error_t_median)
 
     table.add_row('avg', *[f'{scene_recall_mean:.3f} +- {scene_recall_std:.3f}',
                            f'{rre_mean:.3f} +- {rre_std:.3f}',
@@ -88,7 +93,6 @@ def main(args):
                                                           shuffle=False,
                                                           neighborhood_limits=None)
 
-    print(neighborhood_limits)
     model = NgeNet(config)
     use_cuda = not args.no_cuda
     if use_cuda:
@@ -103,7 +107,7 @@ def main(args):
     rmse_threshold = 0.2
     inlier_ratios, mutual_inlier_ratios = [], []
     mutual_feature_match_recalls, feature_match_recalls = [], []
-    rmses, Ts = [], []
+    Ts = []
     metric = Metric()
 
     dist_thresh_maps = {
@@ -213,15 +217,7 @@ def main(args):
                                                            voxel_size=dist_thresh_maps[str(args.npts)])
 
             Ts.append(pred_T)
-
-            unique_rows = np.unique(coors[:, 0], return_index=True)[1]
-            coors_filter = coors[unique_rows, :]
-            rmse = registration_recall_core(points_src=source_npy_raw,
-                                            points_tgt=target_npy_raw,
-                                            gt_corrs=coors_filter,
-                                            pred_T=pred_T)
-            rmses.append(rmse)
-            
+    
             if args.vis:
                 source_ply = npy2pcd(source_npy_raw)
                 source_ply.paint_uniform_color(get_yellow())
@@ -262,19 +258,42 @@ def main(args):
         cat_mutual_inlier_ratios.append(m_mutual_inlier_ratio)
         cat_feature_match_recalls.append(m_feature_match_recall)
         cat_mutual_feature_match_recalls.append(m_mutual_feature_match_recall)
-
-    print('=' * 20, f'Recall: {np.sum(n_valids)} pairs / {len(valid_idx)}', '=' * 20)
-    scene_recall, error_r, error_t, pair_recall, n_valids, n_totals = metric.benchmark(est_folder=args.saved_path,
-                        gt_folder=os.path.join(CUR, 'data', 'ThreeDMatch', 'gt', args.benchmark))
+    
+    
+    print('\n', '='*20, f'Results on {args.benchmark}', '='*20, '\n')
+    print(f'[1]. Scene Recall (correspondences RMSE below 0.2) among {np.sum(n_valids)} pairs:')
+    scene_recall, error_r, error_t, pair_recall, dsc_error_r, dsc_error_t, error_r_all, \
+        error_t_all, n_valids, n_totals = \
+        metric.benchmark(est_folder=args.saved_path, 
+                         gt_folder=os.path.join(CUR, 'data', 'ThreeDMatch', 'gt', args.benchmark))
 
     print_table(scenes, scene_recall, error_r, error_t)
-    print('Pair-level recall: ', fmat(np.sum(pair_recall * n_totals) / np.sum(n_totals)))
 
-    print('=' * 20, 'IR and FMR', '=' * 20)
-    print("Inlier ratio: ", fmat(np.mean(cat_inlier_ratios)))
-    print("Mutual inlier ratio: ", fmat(np.mean(cat_mutual_inlier_ratios)))
-    print("Feature match recall: ", fmat(np.mean(cat_feature_match_recalls)))
-    print("Mutual feature match recall: ", fmat(np.mean(cat_mutual_feature_match_recalls)))
+    print(f'[2]. Pair-level (correspondences RMSE below 0.2) among {np.sum(n_valids)} pairs:')
+    recall = np.sum(scene_recall * n_valids) / np.sum(n_valids)
+    rre = np.sum([sum(item) for item in error_r]) / np.sum([len(item) for item in error_r])
+    rte = np.sum([sum(item) for item in error_t]) / np.sum([len(item) for item in error_t])
+    print(f'- Recall: {fmat(recall)}')
+    print(f'- RRE: {fmat(rre)}')
+    print(f'- RTE: {fmat(rte)}')
+
+    print(f'[3]. Pair-level (under 0.3m && 15 degrees): among {np.sum(n_totals)} pairs:')
+    dsc_recall = np.sum(pair_recall * n_totals) / np.sum(n_totals)
+    dsc_rre = np.sum([sum(item) for item in dsc_error_r]) / np.sum([len(item) for item in dsc_error_r])
+    dsc_rte = np.sum([sum(item) for item in dsc_error_t]) / np.sum([len(item) for item in dsc_error_t])
+    all_rre = np.sum([sum(item) for item in error_r_all]) / np.sum([len(item) for item in error_r_all])
+    all_rte = np.sum([sum(item) for item in error_t_all]) / np.sum([len(item) for item in error_t_all])
+    print(f'- Recall: {fmat(dsc_recall)}')
+    print(f'- RRE (Successful): {fmat(dsc_rre)}')
+    print(f'- RTE (Successful): {fmat(dsc_rte)}')
+    print(f'- RRE (ALL): {fmat(all_rre)}')
+    print(f'- RTE (ALL): {fmat(all_rte)}')
+
+    print('[4]. Inlier ratio and Feature matching recall: ')
+    print("- Inlier ratio: ", fmat(np.mean(cat_inlier_ratios)))
+    print("- Mutual inlier ratio: ", fmat(np.mean(cat_mutual_inlier_ratios)))
+    print("- Feature match recall: ", fmat(np.mean(cat_feature_match_recalls)))
+    print("- Mutual feature match recall: ", fmat(np.mean(cat_mutual_feature_match_recalls)))
 
 
 if __name__ == '__main__':

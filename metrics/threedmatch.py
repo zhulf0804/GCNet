@@ -52,13 +52,13 @@ class Metric(object):
         self.te_thre = 30
 
     def benchmark(self, est_folder, gt_folder='configs/benchmarks/3DMatch'):
-        # est_folder = 'snapshot/indoor/est_traj/3DMatch_1000_prob'
-        # gt_folder = 'configs/benchmarks/3DMatch'
         scenes = sorted(os.listdir(gt_folder))
 
         n_valids, n_totals = [], []
         predator_style_recall_per_scene, dsc_style_recall_per_scene = [], []
         error_rs, error_ts = [], []
+        dsc_error_rs, dsc_error_ts = [], []
+        error_rs_all, error_ts_all = [], []
         for scene_i, scene in enumerate(scenes):
             est_pairs, est_traj = self.read_trajectory(os.path.join(est_folder, scene, 'est.log'))
             gt_pairs, gt_traj = self.read_trajectory(os.path.join(gt_folder, scene, 'gt.log'))
@@ -71,17 +71,26 @@ class Metric(object):
             n_valids.append(n_valid)
             n_totals.append(len(est_traj))
 
-            predator_recall, dsc_recall, valid_num, error_r, error_t = self.evaluate_both_recall(est_pairs, gt_pairs, est_traj, gt_traj, n_fragments, gt_traj_cov)
+            predator_recall, dsc_recall, valid_num, error_r, error_t, dsc_error_r, dsc_error_t, error_r_all, error_t_all = \
+                self.evaluate_both_recall(est_pairs, gt_pairs, est_traj, gt_traj, n_fragments, gt_traj_cov)
             assert valid_num == n_valids[scene_i]
             predator_style_recall_per_scene.append(predator_recall / valid_num)
             dsc_style_recall_per_scene.append(dsc_recall / len(est_traj))
             error_rs.append(error_r)
             error_ts.append(error_t)
+            dsc_error_rs.append(dsc_error_r)
+            dsc_error_ts.append(dsc_error_t)
+            error_rs_all.append(error_r_all)
+            error_ts_all.append(error_t_all)
 
         return np.array(predator_style_recall_per_scene), \
-               np.array(error_rs), \
-               np.array(error_ts), \
+               error_rs, \
+               error_ts, \
                np.array(dsc_style_recall_per_scene), \
+               dsc_error_rs, \
+               dsc_error_ts, \
+               error_rs_all, \
+               error_ts_all, \
                np.array(n_valids), \
                np.array(n_totals)
 
@@ -90,12 +99,15 @@ class Metric(object):
 
         predator_recall, dsc_recall = 0, 0
         valid = 0
-        flags = []
+        flags, flags_dsc = [], []
         for i in range(len(est_pairs)):
             ind_i, ind_j, _ = est_pairs[i]
             this_gt, this_pred, this_info = gt_traj[i], est_traj[i], gt_traj_cov[i]
             if self.dsc_style_recall(this_pred, this_gt):
                 dsc_recall += 1
+                flags_dsc.append(0)
+            else:
+                flags_dsc.append(1)
             if int(ind_j) - int(ind_i) > 1:
                 valid += 1
                 if self.predator_style_recall(this_pred, this_gt, this_info):
@@ -108,10 +120,13 @@ class Metric(object):
 
         error_rs = Error_R(est_traj[:, :3, :3], gt_traj[:, :3, :3])[np.array(flags) == 0]
         error_ts = Error_t(est_traj[:, :3, 3], gt_traj[:, :3, 3])[np.array(flags) == 0]
-        error_r_mean, error_r_median = np.mean(error_rs), np.median(error_rs)
-        error_t_mean, error_t_median = np.mean(error_ts), np.median(error_ts)
+        dsc_error_rs = Error_R(est_traj[:, :3, :3], gt_traj[:, :3, :3])[np.array(flags_dsc) == 0]
+        dsc_error_ts = Error_t(est_traj[:, :3, 3], gt_traj[:, :3, 3])[np.array(flags_dsc) == 0]
+        error_rs_all = Error_R(est_traj[:, :3, :3], gt_traj[:, :3, :3])
+        error_ts_all = Error_t(est_traj[:, :3, 3], gt_traj[:, :3, 3])
 
-        return predator_recall, dsc_recall, valid, [error_r_mean, error_r_median], [error_t_mean, error_t_median]
+        return predator_recall, dsc_recall, valid, error_rs, error_ts, \
+            dsc_error_rs, dsc_error_ts, error_rs_all, error_ts_all
 
     def dsc_style_recall(self, pred, gt):
         pred_R, pred_t = self.decompose_trans(pred)
