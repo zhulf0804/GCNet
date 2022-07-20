@@ -41,7 +41,7 @@ def get_scene_split(file_path):
                 ply_coors_ids.append(item)
         splits.append([c, c + stride])
         c += stride
-    return splits, np.array(ply_coors_ids, dtype=np.int), test_cats
+    return splits, np.array(ply_coors_ids, dtype=np.int64), test_cats
 
 def print_table(scenes, scene_recall, rre, rte):
 
