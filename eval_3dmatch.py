@@ -15,6 +15,8 @@ from utils import decode_config, npy2pcd, pcd2npy, execute_global_registration, 
                   npy2feat, vis_plys, setup_seed, fmat, to_tensor, get_blue, \
                   get_yellow
 from metrics import inlier_ratio_core, registration_recall_core, Metric
+from rich.console import Console
+from rich.table import Table
 
 CUR = os.path.dirname(os.path.abspath(__file__))
 
@@ -40,6 +42,32 @@ def get_scene_split(file_path):
         splits.append([c, c + stride])
         c += stride
     return splits, np.array(ply_coors_ids, dtype=np.int), test_cats
+
+def print_table(scenes, scene_recall, rre, rte):
+
+    console = Console()
+    table = Table(show_header=True, header_style="bold")
+
+    columns = ["scene", "recall", "rre", "rte"]
+    for col in columns:
+        table.add_column(col)
+
+    values = np.concatenate([scene_recall[:,None], rre[:, 1:], rte[:, 1:]], axis=1)
+
+    for sid, vals in zip(scenes, values):
+        table.add_row(sid, *[f'{v:.3f}' for v in vals])
+
+    scene_recall_mean = np.mean(scene_recall)
+    scene_recall_std = np.std(scene_recall)
+    rre_mean = np.mean(rre[:, :1])
+    rre_std = np.std(rre[:, 1])
+    rte_mean = np.mean(rte[:, :1])
+    rte_std = np.std(rte[:, 1])
+
+    table.add_row('avg', *[f'{scene_recall_mean:.3f} +- {scene_recall_std:.3f}',
+                           f'{rre_mean:.3f} +- {rre_std:.3f}',
+                           f'{rte_mean:.3f} +- {rte_std:.3f}'])
+    console.print(table)
 
 
 def main(args):
@@ -238,27 +266,20 @@ def main(args):
         cat_feature_match_recalls.append(m_feature_match_recall)
         cat_mutual_feature_match_recalls.append(m_mutual_feature_match_recall)
 
-    
-    print('='*20, f'Recall: {np.sum(n_valids)} pairs / {len(valid_idx)}', '='*20)
-    recall_1, error_r, error_t, recall_2, num_1, num_2 = metric.benchmark(est_folder=args.saved_path,
-                     gt_folder=os.path.join(CUR, 'data', 'ThreeDMatch', 'gt', args.benchmark))
-    print('Per scene recall: ', fmat(recall_1))
-    print('Scene recall: ',  fmat(np.mean(recall_1)), 'Std: ', fmat(np.std(recall_1)))
-    print('Pair recall: ', fmat(np.sum(recall_1 * num_1) / np.sum(num_1)))
-    
-    print('='*20, 'RRE and RTE', '='*20)
-    print('Per scene RRE: ', fmat(error_r[:, 1]))
-    print('scene RRE: ', fmat(np.mean(error_r[:, :1])), 'Std: ', fmat(np.std(error_r[:, 1])))
-    print('Per scene RTE: ', fmat(error_t[:, 1]))
-    print('scene RTE: ', fmat(np.mean(error_t[:, :1])), 'Std: ', fmat(np.std(error_t[:, 1])))
-    
-    print('='*20, 'IR and FMR', '='*20)
+    print('=' * 20, f'Recall: {np.sum(n_valids)} pairs / {len(valid_idx)}', '=' * 20)
+    scene_recall, error_r, error_t, pair_recall, n_valids, n_totals = metric.benchmark(est_folder=args.saved_path,
+                        gt_folder=os.path.join(CUR, 'data', 'ThreeDMatch', 'gt', args.benchmark))
+
+    print_table(scenes, scene_recall, error_r, error_t)
+    print('Pair-level recall: ', fmat(np.sum(pair_recall * n_totals) / np.sum(n_totals)))
+
+    print('=' * 20, 'IR and FMR', '=' * 20)
     print("Inlier ratio: ", fmat(np.mean(cat_inlier_ratios)))
     print("Mutual inlier ratio: ", fmat(np.mean(cat_mutual_inlier_ratios)))
     print("Feature match recall: ", fmat(np.mean(cat_feature_match_recalls)))
     print("Mutual feature match recall: ", fmat(np.mean(cat_mutual_feature_match_recalls)))
 
- 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Configuration Parameters')
     parser.add_argument('--benchmark', default='3DMatch', help='3DMatch or 3DLoMatch')
