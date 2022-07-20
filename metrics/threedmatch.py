@@ -71,10 +71,10 @@ class Metric(object):
             n_valids.append(n_valid)
             n_totals.append(len(est_traj))
 
-            good_1, good_2, valid_num, error_r, error_t = self.evaluate_both_recall(est_pairs, gt_pairs, est_traj, gt_traj, n_fragments, gt_traj_cov)
+            predator_recall, dsc_recall, valid_num, error_r, error_t = self.evaluate_both_recall(est_pairs, gt_pairs, est_traj, gt_traj, n_fragments, gt_traj_cov)
             assert valid_num == n_valids[scene_i]
-            predator_style_recall_per_scene.append(good_1 / valid_num)
-            dsc_style_recall_per_scene.append(good_2 / len(est_pairs))
+            predator_style_recall_per_scene.append(predator_recall / valid_num)
+            dsc_style_recall_per_scene.append(dsc_recall / len(est_traj))
             error_rs.append(error_r)
             error_ts.append(error_t)
 
@@ -88,29 +88,30 @@ class Metric(object):
     def evaluate_both_recall(self, est_pairs, gt_pairs, est_traj, gt_traj, n_fragments, gt_traj_cov):
         assert (gt_pairs == est_pairs).all()
 
-        good_predator, good_dsc = 0, 0
+        predator_recall, dsc_recall = 0, 0
         valid = 0
         flags = []
         for i in range(len(est_pairs)):
             ind_i, ind_j, _ = est_pairs[i]
             this_gt, this_pred, this_info = gt_traj[i], est_traj[i], gt_traj_cov[i]
             if self.dsc_style_recall(this_pred, this_gt):
-                good_dsc += 1
+                dsc_recall += 1
             if int(ind_j) - int(ind_i) > 1:
                 valid += 1
                 if self.predator_style_recall(this_pred, this_gt, this_info):
-                    good_predator += 1
+                    predator_recall += 1
                     flags.append(0)
                 else:
                     flags.append(1)
             else:
                 flags.append(2)
+
         error_rs = Error_R(est_traj[:, :3, :3], gt_traj[:, :3, :3])[np.array(flags) == 0]
         error_ts = Error_t(est_traj[:, :3, 3], gt_traj[:, :3, 3])[np.array(flags) == 0]
         error_r_mean, error_r_median = np.mean(error_rs), np.median(error_rs)
         error_t_mean, error_t_median = np.mean(error_ts), np.median(error_ts)
 
-        return good_predator, good_dsc, valid, [error_r_mean, error_r_median], [error_t_mean, error_t_median]
+        return predator_recall, dsc_recall, valid, [error_r_mean, error_r_median], [error_t_mean, error_t_median]
 
     def dsc_style_recall(self, pred, gt):
         pred_R, pred_t = self.decompose_trans(pred)
