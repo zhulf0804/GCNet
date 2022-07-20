@@ -214,11 +214,8 @@ def main(args):
 
             Ts.append(pred_T)
 
-            coors_filter = {}
-            for i, j in coors:
-                if i not in coors_filter:
-                    coors_filter[i] = j
-            coors_filter = np.array([[i, j] for i, j in coors_filter.items()])
+            unique_rows = np.unique(coors[:, 0], return_index=True)[1]
+            coors_filter = coors[unique_rows, :]
             rmse = registration_recall_core(points_src=source_npy_raw,
                                             points_tgt=target_npy_raw,
                                             gt_corrs=coors_filter,
