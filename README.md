@@ -161,7 +161,19 @@ python eval_mvp_rg.py --data_root your_path/mvp_rg --checkpoint your_path/mvp_rg
 
 ## [Demo]
 
-TBD
+### 4.1 3DMatch
+
+```
+python demo.py --src_path demo_data/cloud_bin_21.pth --tgt_path demo_data/cloud_bin_34.pth --checkpoint your_path/3dmatch.pth
+```
+![](demo_data/3dmatch.png)
+
+### 4.2 Personal data
+
+```
+python demo.py --src_path demo_data/src.ply --tgt_path demo_data/tgt.ply --checkpoint your_path/3dmatch.pth  --npts 20000
+```
+![](demo_data/my_data.png)
 
 ## Citation
 

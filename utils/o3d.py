@@ -5,6 +5,22 @@ import open3d as o3d
 import random
 
 
+def read_cloud(path, rt='pcd'):
+    if path.endswith('.ply') or path.endswith('.pcd'):
+        pcd = o3d.io.read_point_cloud(path)
+    elif path.endswith('.pth'):
+        points = torch.load(path)
+        pcd = npy2pcd(points)
+    else:
+        raise NotImplementedError
+    if rt == 'pcd':
+        return pcd
+    elif rt == 'npy':
+        return np.asarray(pcd.points)
+    else:
+        raise NotImplementedError
+
+
 def npy2pcd(npy):
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(npy)
