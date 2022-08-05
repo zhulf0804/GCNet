@@ -17,9 +17,12 @@ CUR = os.path.dirname(os.path.abspath(__file__))
 
 
 class NgeNet_pipeline():
-    def __init__(self, ckpt_path, voxel_size=0.025, cuda=True):
+    def __init__(self, ckpt_path, voxel_size, vote_flag, cuda=True):
+        self.voxel_size_3dmatch = 0.025
         self.voxel_size = voxel_size
+        self.scale = self.voxel_size / self.voxel_size_3dmatch
         self.cuda = cuda
+        self.vote_flag = vote_flag
         config = self.prepare_config()
         self.neighborhood_limits = [38, 36, 35, 38]
         model = NgeNet(config)
@@ -36,18 +39,22 @@ class NgeNet_pipeline():
     def prepare_config(self):
         config = decode_config(os.path.join(CUR, 'configs', 'threedmatch.yaml'))
         config = edict(config)
-        config.first_subsampling_dl = self.voxel_size
+        # config.first_subsampling_dl = self.voxel_size
         config.architecture = architectures[config.dataset]
         return config
 
-    def prepare_inputs(self, source, target, voxel_size):
-        src_pcd_input = pcd2npy(voxel_ds(copy.deepcopy(source), voxel_size))
-        tgt_pcd_input = pcd2npy(voxel_ds(copy.deepcopy(target), voxel_size))
+    def prepare_inputs(self, source, target):
+        src_pcd_input = pcd2npy(voxel_ds(copy.deepcopy(source), self.voxel_size))
+        tgt_pcd_input = pcd2npy(voxel_ds(copy.deepcopy(target), self.voxel_size))
+
+        src_pcd_input /= self.scale
+        tgt_pcd_input /= self.scale
+
         src_feats = np.ones_like(src_pcd_input[:, :1])
         tgt_feats = np.ones_like(tgt_pcd_input[:, :1])
 
-        src_pcd = normal(npy2pcd(src_pcd_input), radius=4*voxel_size, max_nn=30, loc=(0, 0, 0))
-        tgt_pcd = normal(npy2pcd(tgt_pcd_input), radius=4*voxel_size, max_nn=30, loc=(0, 0, 0))
+        src_pcd = normal(npy2pcd(src_pcd_input), radius=4*self.voxel_size_3dmatch, max_nn=30, loc=(0, 0, 0))
+        tgt_pcd = normal(npy2pcd(tgt_pcd_input), radius=4*self.voxel_size_3dmatch, max_nn=30, loc=(0, 0, 0))
         src_normals = np.array(src_pcd.normals).astype(np.float32) 
         tgt_normals = np.array(tgt_pcd.normals).astype(np.float32)
 
@@ -80,8 +87,7 @@ class NgeNet_pipeline():
         return dict_inputs
 
     def pipeline(self, source, target, npts=20000):
-        voxel_size = self.voxel_size
-        inputs = self.prepare_inputs(source, target, voxel_size)
+        inputs = self.prepare_inputs(source, target)
 
         batched_feats_h, batched_feats_m, batched_feats_l = self.model(inputs)
         stack_points = inputs['points']
@@ -95,17 +101,9 @@ class NgeNet_pipeline():
         feats_src_l = batched_feats_l[:stack_lengths[0][0]]
         feats_tgt_l = batched_feats_l[stack_lengths[0][0]:]
 
-        coors = inputs['coors'][0] # list, [coors1, coors2, ..], preparation for batchsize > 1
-        transf = inputs['transf'][0] # (1, 4, 4), preparation for batchsize > 1
+        source_npy = coords_src.detach().cpu().numpy() * self.scale
+        target_npy = coords_tgt.detach().cpu().numpy() * self.scale
 
-        coors = coors.detach().cpu().numpy()
-        T = transf.detach().cpu().numpy()
-
-        source_npy = coords_src.detach().cpu().numpy()
-        target_npy = coords_tgt.detach().cpu().numpy()
-
-        source_npy_raw = copy.deepcopy(source_npy)
-        target_npy_raw = copy.deepcopy(target_npy)
         source_feats_h = feats_src_h[:, :-2].detach().cpu().numpy()
         target_feats_h = feats_tgt_h[:, :-2].detach().cpu().numpy()
         source_feats_m = feats_src_m.detach().cpu().numpy()
@@ -135,23 +133,27 @@ class NgeNet_pipeline():
                 target_feats_h = target_feats_h[idx]
                 target_feats_m = target_feats_m[idx]
                 target_feats_l = target_feats_l[idx]
-        after_vote = vote(source_npy=source_npy, 
+        
+        if self.vote_flag:
+            after_vote = vote(source_npy=source_npy, 
                             target_npy=target_npy, 
                             source_feats=[source_feats_h, source_feats_m, source_feats_l], 
                             target_feats=[target_feats_h, target_feats_m, target_feats_l], 
-                            voxel_size=voxel_size,
+                            voxel_size=self.voxel_size * 2,
                             use_cuda=self.cuda)
-        
-        source_npy, target_npy, source_feats_npy, target_feats_npy = after_vote
+            source_npy, target_npy, source_feats_npy, target_feats_npy = after_vote
+        else:
+            source_feats_npy, target_feats_npy = source_feats_h, target_feats_h
         source, target = npy2pcd(source_npy), npy2pcd(target_npy)
         source_feats, target_feats = npy2feat(source_feats_npy), npy2feat(target_feats_npy)
         pred_T, estimate = execute_global_registration(source=source,
-                                                        target=target,
-                                                        source_feats=source_feats,
-                                                        target_feats=target_feats,
-                                                        voxel_size=voxel_size*2)
+                                                       target=target,
+                                                       source_feats=source_feats,
+                                                       target_feats=target_feats,
+                                                       voxel_size=self.voxel_size*2)
+        
         torch.cuda.empty_cache()
-        return pred_T, npy2pcd(copy.deepcopy(source_npy_raw)).transform(pred_T)
+        return pred_T
 
 
 if __name__ == '__main__':
@@ -159,9 +161,11 @@ if __name__ == '__main__':
     parser.add_argument('--src_path', required=True, help='source point cloud path')
     parser.add_argument('--tgt_path', required=True, help='target point cloud path')
     parser.add_argument('--checkpoint', required=True, help='checkpoint path')
-    parser.add_argument('--voxel_size', type=float, default=0.025, help='voxel size')
-    parser.add_argument('--npts', type=int, default=5000,
+    parser.add_argument('--voxel_size', type=float, required=True, help='voxel size')
+    parser.add_argument('--npts', type=int, default=20000,
                         help='the number of sampled points for registration')
+    parser.add_argument('--no_vote', action='store_true',
+                        help='whether to use multi-level consistent voting')
     parser.add_argument('--no_vis', action='store_true',
                         help='whether to visualize the point clouds')
     parser.add_argument('--no_cuda', action='store_true',
@@ -173,17 +177,23 @@ if __name__ == '__main__':
 
     # loading model
     cuda = not args.no_cuda
+    vote_flag = not args.no_vote
     model = NgeNet_pipeline(
         ckpt_path=args.checkpoint, 
         voxel_size=args.voxel_size, 
+        vote_flag=vote_flag,
         cuda=cuda)
     
     # registration
-    T, estimate = model.pipeline(source, target, npts=args.npts)
+    T = model.pipeline(source, target, npts=args.npts)
     print('Estimated transformation matrix: ', T)
 
     # vis
     if not args.no_vis:
+        # voxelization for fluent visualization 
+        source = voxel_ds(source, args.voxel_size)
+        target = voxel_ds(target, args.voxel_size)
+        estimate = copy.deepcopy(source).transform(T)
         source.paint_uniform_color(get_yellow())
         source.estimate_normals()
         target.paint_uniform_color(get_blue())

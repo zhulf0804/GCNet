@@ -169,16 +169,25 @@ python eval_mvp_rg.py --data_root your_path/mvp_rg --checkpoint your_path/mvp_rg
 ### 4.1 3DMatch
 
 ```
-python demo.py --src_path demo_data/cloud_bin_21.pth --tgt_path demo_data/cloud_bin_34.pth --checkpoint your_path/3dmatch.pth
+python demo.py --src_path demo_data/cloud_bin_21.pth --tgt_path demo_data/cloud_bin_34.pth --checkpoint your_path/3dmatch.pth --voxel_size 0.025 --npts 5000
 ```
 ![](demo_data/3dmatch.png)
 
-### 4.2 Personal data
+### 4.2 Personal data (with the same voxel size as 3DMatch)
 
 ```
-python demo.py --src_path demo_data/src.ply --tgt_path demo_data/tgt.ply --checkpoint your_path/3dmatch.pth  --npts 20000
+python demo.py --src_path demo_data/src1.ply --tgt_path demo_data/tgt1.ply --checkpoint your_path/3dmatch.pth  --voxel_size 0.025 --npts 20000
 ```
-![](demo_data/my_data.png)
+![](demo_data/my_data1.png)
+
+### 4.3 Personal data (with different voxel size from 3DMatch)
+
+```
+python demo.py --src_path demo_data/src2.ply  --tgt_path demo_data/tgt2.ply --checkpoint your_path/3dmatch.pth --voxel_size 3 --npts 20000
+```
+![](demo_data/my_data2.png)
+
+Set an appropriate `voxel_size` for your test data. If you want to test on point cloud pair with **large amount of points**, please **set a large `voxel_size` according to your data**.
 
 ## Citation
 
