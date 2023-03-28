@@ -1,9 +1,11 @@
-# [NgeNet: Neighborhood-aware Geometric Encoding Network for Point Cloud Registration](https://arxiv.org/pdf/2201.12094.pdf)
+# [Leveraging Inlier Correspondences Proportion for Point Cloud Registration](https://arxiv.org/pdf/2201.12094.pdf)
 
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/neighborhood-aware-geometric-encoding-network/point-cloud-registration-on-3dmatch-at-least-2)](https://paperswithcode.com/sota/point-cloud-registration-on-3dmatch-at-least-2?p=neighborhood-aware-geometric-encoding-network)
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/neighborhood-aware-geometric-encoding-network/point-cloud-registration-on-3dlomatch-10-30)](https://paperswithcode.com/sota/point-cloud-registration-on-3dlomatch-10-30?p=neighborhood-aware-geometric-encoding-network)
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/neighborhood-aware-geometric-encoding-network/point-cloud-registration-on-3dmatch-at-least-1)](https://paperswithcode.com/sota/point-cloud-registration-on-3dmatch-at-least-1?p=neighborhood-aware-geometric-encoding-network)
 
+
+Paper "Neighborhood-aware Geometric Encoding Network for Point Cloud Registration" was renamed to "Leveraging Inlier Correspondences Proportion for Point Cloud Registration" (NgeNet -> GCNet).
 
 ## Results (saved in reg_results/3DMatch*-pred)
 
@@ -192,8 +194,8 @@ Set an appropriate `voxel_size` for your test data. If you want to test on point
 ## Citation
 
 ```
-@article{zhu2022neighborhood,
-  title={Neighborhood-aware Geometric Encoding Network for Point Cloud Registration},
+@article{zhu2022leveraging,
+  title={Leveraging Inlier Correspondences Proportion for Point Cloud Registration},
   author={Zhu, Lifa and Guan, Haining and Lin, Changwei and Han, Renmin},
   journal={arXiv preprint arXiv:2201.12094},
   year={2022}
