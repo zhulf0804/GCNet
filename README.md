@@ -44,7 +44,7 @@ Paper "Neighborhood-aware Geometric Encoding Network for Point Cloud Registratio
     ```
     # Compile
 
-    cd NgeNet/cpp_wrappers
+    cd GCNet/cpp_wrappers
     sh compile_wrappers.sh
     ```
 
@@ -81,7 +81,7 @@ Unzip it, then we should get the following directories structure:
 # exp_dir: your_saved_path for checkpoints and summary.
 # root: your_data_path for the 3dMatch dataset.
 
-cd NgeNet
+cd GCNet
 python train.py configs/threedmatch.yaml
 
 # note: The code `torch.cuda.empty_cache()` in `train.py` has some impact on the training speed.
@@ -91,7 +91,7 @@ python train.py configs/threedmatch.yaml
 ### 1.3 evaluate and visualize
 
 ```
-cd NgeNet
+cd GCNet
 
 python eval_3dmatch.py --benchmark 3DMatch --data_root your_path/indoor --checkpoint your_path/3dmatch.pth --saved_path work_dirs/3dmatch [--vis] [--no_cuda]
 
@@ -123,14 +123,14 @@ Download odometry kitti [here](http://www.cvlibs.net/datasets/kitti/eval_odometr
 # exp_dir: your_saved_path for checkpoints and summary.
 # root: your_data_path for the Odometry KITTI.
 
-cd NgeNet
+cd GCNet
 python train.py configs/kitti.yaml
 ```
 
 ### 2.3 evaluate and visualize
 
 ```
-cd NgeNet
+cd GCNet
 python eval_kitti.py --data_root your_path/kitti --checkpoint your_path/kitti.pth [--vis] [--no_cuda]
 ```
 

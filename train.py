@@ -8,7 +8,7 @@ from tqdm import tqdm
 from torch.utils.tensorboard import SummaryWriter
 
 from data import get_dataset, get_dataloader
-from models import architectures, NgeNet
+from models import architectures, GCNet
 from losses import Loss
 from utils import decode_config, setup_seed
 
@@ -50,7 +50,7 @@ def main():
                                        neighborhood_limits=neighborhood_limits)
 
     print(neighborhood_limits)
-    model = NgeNet(config).cuda()
+    model = GCNet(config).cuda()
     model_loss = Loss(config)
 
     if config.optimizer == 'SGD':

@@ -10,7 +10,7 @@ from easydict import EasyDict as edict
 from tqdm import tqdm
 
 from data import MVP_RG, get_dataloader
-from models import architectures, NgeNet, vote
+from models import architectures, GCNet, vote
 from utils import decode_config, npy2pcd, pcd2npy, execute_global_registration, \
     npy2feat, vis_plys, setup_seed, fmat, to_tensor, get_blue, get_yellow
 from metrics import Error_R, Error_t, RMSE
@@ -38,7 +38,7 @@ def main(args):
                                                           neighborhood_limits=None)
 
     print(neighborhood_limits)
-    model = NgeNet(config)
+    model = GCNet(config)
     use_cuda = not args.no_cuda
     if use_cuda:
         model = model.cuda()
