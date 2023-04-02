@@ -125,7 +125,7 @@ plt.plot(x, d3feat_, color='lightcoral', linewidth=3, label='D3Feat', linestyle=
 plt.plot(x, dsn_, color='lightseagreen', linewidth=3, label='3DSN', linestyle=linestyle_tuple[4][-1])
 plt.plot(x, ppffold_, color='royalblue', linewidth=3, label='PPF-FoldNet', linestyle=linestyle_tuple[5][-1])
 plt.plot(x, cofinet_, color='tomato', linewidth=3, label='CoFiNet', linestyle='dashdot')
-plt.plot(x, ngenet_, color='magenta', linewidth=3, label='NgeNet', linestyle='solid')
+plt.plot(x, ngenet_, color='magenta', linewidth=3, label='GCNet', linestyle='solid')
 plt.vlines(0.05, 0, 100, colors="gray", linestyles="dashed")
 plt.xlim((0.01, 0.2))
 plt.ylim((0, 100))

@@ -7,7 +7,7 @@ from models.KPConv import block_decider
 from models import InformationInteractive
 
 
-class NgeNet(nn.Module):
+class GCNet(nn.Module):
     def __init__(self, config):
         super().__init__()
         r = config.first_subsampling_dl * config.conv_radius

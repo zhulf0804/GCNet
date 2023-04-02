@@ -8,7 +8,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from data import collate_fn
-from models import architectures, NgeNet, vote
+from models import architectures, GCNet, vote
 from utils import decode_config, npy2pcd, pcd2npy, execute_global_registration, \
                   npy2feat, setup_seed, get_blue, get_yellow, voxel_ds, normal, \
                   read_cloud, vis_plys
@@ -16,7 +16,7 @@ from utils import decode_config, npy2pcd, pcd2npy, execute_global_registration, 
 CUR = os.path.dirname(os.path.abspath(__file__))
 
 
-class NgeNet_pipeline():
+class GCNet_pipeline():
     def __init__(self, ckpt_path, voxel_size, vote_flag, cuda=True):
         self.voxel_size_3dmatch = 0.025
         self.voxel_size = voxel_size
@@ -25,7 +25,7 @@ class NgeNet_pipeline():
         self.vote_flag = vote_flag
         config = self.prepare_config()
         self.neighborhood_limits = [38, 36, 35, 38]
-        model = NgeNet(config)
+        model = GCNet(config)
         if self.cuda:
             model = model.cuda()
             model.load_state_dict(torch.load(ckpt_path))
@@ -178,7 +178,7 @@ if __name__ == '__main__':
     # loading model
     cuda = not args.no_cuda
     vote_flag = not args.no_vote
-    model = NgeNet_pipeline(
+    model = GCNet_pipeline(
         ckpt_path=args.checkpoint, 
         voxel_size=args.voxel_size, 
         vote_flag=vote_flag,
